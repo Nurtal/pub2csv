@@ -73,8 +73,36 @@ def get_files_between_date(file_to_date:dict, date_min:str, date_max:str):
             
     return target_file
 
+def download_file_list(file_list:list, ncbi_server_address:str, pubmed_emplacement:str, download_folder:str) -> None:
+    """Download a specific list of files from the ncbri to a download folder
 
+    Args:
+        - file_list (list) : list of file to dl
+        - ncbi_server_address (str) : ftp server adress
+        - pubmed_emplacement (str) : folder where to fond the files on the ftp server
+        - download_folder (str) : local download where files are dl
+    
+    """
 
+    # if dl folder does not exist, create it
+    if not os.path.isdir(download_folder):
+        os.mkdir(download_folder)
+
+    # connect to the NCBI server
+    ftp = FTP(ncbi_server_address)
+    ftp.login(user="", passwd="")
+
+    # navigate to the pubmed directory
+    ftp.cwd(pubmed_emplacement)
+
+    # loop over target list
+    for gz_file in file_list:
+
+        # download file
+        gz_local_file = open(download_folder + "/" + str(gz_file), "wb")
+        ftp.retrbinary("RETR " + str(gz_file), gz_local_file.write, 1024)
+        gz_local_file.close()
+    
 
 
 if __name__ == "__main__":
@@ -85,7 +113,5 @@ if __name__ == "__main__":
 
     m = get_list_of_pubmed_files(ncbi_server_address, pubmed_emplacement)
     m = get_files_between_date(m, "12/09/2025", "01/01/2030")
-    print(m)
-    
-
+    download_file_list(m, ncbi_server_address, pubmed_emplacement, "/tmp/pub2csv")
     
