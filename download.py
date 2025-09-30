@@ -47,6 +47,34 @@ def get_list_of_pubmed_files(ncbi_server_address:str, pubmed_emplacement:str) ->
     return file_to_date
 
 
+def get_files_between_date(file_to_date:dict, date_min:str, date_max:str):
+    """Get files updated between min and max date, retrun list of files
+
+    Args:
+        - file_to_date (dict) : filename to last updated date
+        - date_min (str) : min date in d/m/Y format
+        - date_max (str) : max date in d/m/Y format
+
+    Returns:
+        - (list) : list of selected files
+    
+    """
+
+    # preprocess date
+    date_min = datetime.strptime(date_min, "%d/%m/%Y")
+    date_max = datetime.strptime(date_max, "%d/%m/%Y")
+
+    # select candidates file
+    target_file = []
+    for f in file_to_date:
+        d = file_to_date[f]
+        if d >= date_min and d <= date_max:
+            target_file.append(f)
+            
+    return target_file
+
+
+
 
 
 if __name__ == "__main__":
@@ -56,6 +84,7 @@ if __name__ == "__main__":
     pubmed_emplacement = "/pubmed/updatefiles/"
 
     m = get_list_of_pubmed_files(ncbi_server_address, pubmed_emplacement)
+    m = get_files_between_date(m, "12/09/2025", "01/01/2030")
     print(m)
     
 
