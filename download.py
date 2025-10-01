@@ -112,6 +112,6 @@ if __name__ == "__main__":
     pubmed_emplacement = "/pubmed/updatefiles/"
 
     m = get_list_of_pubmed_files(ncbi_server_address, pubmed_emplacement)
-    m = get_files_between_date(m, "12/09/2025", "01/01/2030")
+    m = get_files_between_date(m, "12/09/2025", "25/09/2025")
     download_file_list(m, ncbi_server_address, pubmed_emplacement, "/tmp/pub2csv")
     
