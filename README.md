@@ -1,3 +1,8 @@
 # Pub2Csv
 
-Connect to NCBI, dl pumbmed data files and render them as a csv
+## Overview
+This program does:
+  - Connect to NCBI (pubmed)
+  - dl pumbmed xml data files
+  - format xml files into dataframes
+  - export dataframe as parquet / csv 
