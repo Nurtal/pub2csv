@@ -105,13 +105,53 @@ def download_file_list(file_list:list, ncbi_server_address:str, pubmed_emplaceme
     
 
 
+def get_files_metadata(ncbi_server_address:str, pubmed_emplacement:str):
+    """Extract size and last date of update of each files in pubmed_emplacement
+
+    TODO : Finish last date update computation
+    
+    """
+
+    # connect to the NCBI server
+    ftp = FTP(ncbi_server_address)
+    ftp.login(user="", passwd="")
+
+    # navigate to the pubmed directory
+    ftp.cwd(pubmed_emplacement)
+
+    # extract meta data
+    file_to_data = {}
+    lines = []
+    ftp.retrlines("LIST", lines.append)
+    for line in lines:
+
+        # extract infos
+        line = line.split()
+        filename = line[-1] 
+        size = line[4]
+        month = line[5]
+        day = line[6]
+
+        print(line)
+
+        # save info
+        file_to_data[filename] = {"SIZE":size}
+
+
+    # print(file_to_data)
+
+
+
+
 if __name__ == "__main__":
 
     # parameters
     ncbi_server_address = "ftp.ncbi.nlm.nih.gov"
     pubmed_emplacement = "/pubmed/updatefiles/"
 
-    m = get_list_of_pubmed_files(ncbi_server_address, pubmed_emplacement)
-    m = get_files_between_date(m, "12/09/2025", "25/09/2025")
-    download_file_list(m, ncbi_server_address, pubmed_emplacement, "/tmp/pub2csv")
+    # m = get_list_of_pubmed_files(ncbi_server_address, pubmed_emplacement)
+    # m = get_files_between_date(m, "12/09/2025", "25/09/2025")
+    # download_file_list(m, ncbi_server_address, pubmed_emplacement, "/tmp/pub2csv")
+
+    get_files_metadata(ncbi_server_address, pubmed_emplacement)
     
