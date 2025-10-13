@@ -6,3 +6,7 @@ This program does:
   - dl pumbmed xml data files
   - format xml files into dataframes
   - export dataframe as parquet / csv 
+
+## Install
+python -m build
+pip install dist/[FIX].whl
