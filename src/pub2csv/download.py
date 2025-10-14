@@ -179,8 +179,17 @@ def get_files_metadata(ncbi_server_address:str, pubmed_emplacement:str) -> dict:
 
     return file_to_data
 
-def check_md5(gz_file, md5_file):
-    """ """
+def check_md5(gz_file:str, md5_file:str) -> bool:
+    """Compute and compare gz file md5 hash to expected hash
+
+    Args:
+        - gz_file (str) : path to the gz file
+        - md5_file (str) : path to the md5 file
+
+    Returns:
+        - (bool) : True if hash are identical, False if not
+    
+    """
 
     # init check
     check = True
