@@ -3,6 +3,7 @@ import os
 from tqdm import tqdm
 import glob
 from datetime import datetime
+import hashlib
 
 
 
@@ -178,17 +179,34 @@ def get_files_metadata(ncbi_server_address:str, pubmed_emplacement:str) -> dict:
 
     return file_to_data
 
+def check_md5(gz_file, md5_file):
+    """ """
+
+    # init check
+    check = True
+
+    # compute & load hashes
+    hash_computed = hashlib.md5(open(gz_file, "rb").read()).hexdigest()
+    hash_expected = open(md5_file).read().strip().split()[1]
+
+    if hash_computed != hash_expected:
+        check = False
+
+    return check
+
 
 if __name__ == "__main__":
 
     # parameters
     ncbi_server_address = "ftp.ncbi.nlm.nih.gov"
     pubmed_emplacement = "/pubmed/updatefiles/"
-
+    gz_file = "/home/drfox/Downloads/pubmed25n1275.xml.gz"
+    md5_file = "/home/drfox/Downloads/pubmed25n1275.xml.gz.md5"
+    
     # m = get_list_of_pubmed_files(ncbi_server_address, pubmed_emplacement)
     # m = get_files_between_date(m, "12/09/2025", "25/09/2025")
     # download_file_list(m, ncbi_server_address, pubmed_emplacement, "/tmp/pub2csv")
 
-    m = get_files_metadata(ncbi_server_address, pubmed_emplacement)
-    print(m)
+    # m = get_files_metadata(ncbi_server_address, pubmed_emplacement)
+    # m = check_md5(gz_file, md5_file)
     
