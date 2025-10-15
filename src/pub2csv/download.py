@@ -204,6 +204,42 @@ def check_md5(gz_file:str, md5_file:str) -> bool:
     return check
 
 
+def download_pubmed_file(ncbi_server:str, pubmed_folder:str, file_name:str, destination_folder:str) -> None:
+    """Download a single pubmed xml.gz file and its associated md5 file
+    
+    Args:
+        - ncbi_server (str) : ftp server adress
+        - pubmed_folder (str) : folder where to fond the files on the ftp server
+        - file_name (str) : name of the file to download
+        - destination_folder (str) : folder to save pubmed file and md5 file
+    
+    """
+
+    # create destination folder
+    if not os.path.isdir(destination_folder):
+        os.mkdir(destination_folder)
+
+    # connect to the NCBI server
+    ftp = FTP(ncbi_server)
+    ftp.login(user="", passwd="")
+
+    # navigate to the pubmed directory
+    ftp.cwd(pubmed_folder)
+
+    # download xml.gz file
+    gz_local_file = open(destination_folder + "/" + str(file_name), "wb")
+    ftp.retrbinary("RETR " + str(file_name), gz_local_file.write, 1024)
+    gz_local_file.close()
+
+    # download md5 file
+    md5_local_file = open(destination_folder + "/" + f"{file_name}.md5", "wb")
+    ftp.retrbinary("RETR " + f"{file_name}.md5", md5_local_file.write, 1024)
+    md5_local_file.close()
+    
+
+    
+
+
 if __name__ == "__main__":
 
     # parameters
@@ -211,6 +247,7 @@ if __name__ == "__main__":
     pubmed_emplacement = "/pubmed/updatefiles/"
     gz_file = "/home/drfox/Downloads/pubmed25n1275.xml.gz"
     md5_file = "/home/drfox/Downloads/pubmed25n1275.xml.gz.md5"
+    target_file = "pubmed25n1539.xml.gz"
     
     # m = get_list_of_pubmed_files(ncbi_server_address, pubmed_emplacement)
     # m = get_files_between_date(m, "12/09/2025", "25/09/2025")
@@ -218,4 +255,6 @@ if __name__ == "__main__":
 
     # m = get_files_metadata(ncbi_server_address, pubmed_emplacement)
     # m = check_md5(gz_file, md5_file)
+
+    download_pubmed_file(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch")
     
