@@ -237,9 +237,29 @@ def download_pubmed_file(ncbi_server:str, pubmed_folder:str, file_name:str, dest
     md5_local_file.close()
     
 
+def download_and_check(ncbi_server:str, pubmed_folder:str, file_name:str, destination_folder:str) -> bool:
+    """Download pubmed xml file and its associate md5 file, perform md5 check, return True if check passed, False if not
     
+    Args:
+        - ncbi_server (str) : ftp server adress
+        - pubmed_folder (str) : folder where to fond the files on the ftp server
+        - file_name (str) : name of the file to download
+        - destination_folder (str) : folder to save pubmed file and md5 file
 
+    Returns:
+        - (bool) : True if hash are identical, False if not
+    
+    """
 
+    # Download
+    download_pubmed_file(ncbi_server, pubmed_folder, file_name, destination_folder)
+
+    # check
+    check = check_md5(f"{destination_folder}/{file_name}", f"{destination_folder}/{file_name}.md5")
+
+    return check
+
+    
 if __name__ == "__main__":
 
     # parameters
@@ -256,5 +276,7 @@ if __name__ == "__main__":
     # m = get_files_metadata(ncbi_server_address, pubmed_emplacement)
     # m = check_md5(gz_file, md5_file)
 
-    download_pubmed_file(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch")
+    # download_pubmed_file(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch")
+    m = download_and_check(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch")
+    print(m)
     
