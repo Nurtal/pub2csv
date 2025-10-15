@@ -2,6 +2,7 @@ import gzip
 import xml.etree.ElementTree as ET
 import polars as pl
 import re
+import os
 
 def xml_to_df(file_path:str) -> pl.DataFrame:
     """Parse xml.gz file into a polars dataframe
@@ -168,12 +169,69 @@ def clean_df(df:pl.DataFrame) -> pl.DataFrame:
     # return cleaned df
     return df
 
+
+def xml_to_parquet(pubmed_file:str, parquet_file:str, drop:bool) -> None:
+    """Convert xml file to parquet
+
+    Args:
+        - pubmed_file (str) : xml.gz file containing data
+        - parquet_file (str) : path to save parquet file
+        - drop (bool) : if set to True delete xml.gz and md5 file if exists
+    
+    """
+
+    # extract dataframe
+    df = xml_to_df(pubmed_file)
+
+    # clean df
+    df = clean_df(df)
+
+    # save to parquet
+    df.write_parquet(parquet_file)
+
+    # drop xml file
+    if drop:
+        os.remove(pubmed_file)
+        if os.path.isfile(f"{pubmed_file}.md5"):
+            os.remove(f"{pubmed_file}.md5")
+        
+        
+def xml_to_csv(pubmed_file:str, csv_file:str, drop:bool) -> None:
+    """Convert xml file to csv
+
+    Args:
+        - pubmed_file (str) : xml.gz file containing data
+        - csv_file (str) : path to save csv file
+        - drop (bool) : if set to True delete xml.gz and md5 file if exists
+    
+    """
+
+    # extract dataframe
+    df = xml_to_df(pubmed_file)
+
+    # clean df
+    df = clean_df(df)
+
+    # save to parquet
+    df.write_csv(csv_file)
+
+    # drop xml file
+    if drop:
+        os.remove(pubmed_file)
+        if os.path.isfile(f"{pubmed_file}.md5"):
+            os.remove(f"{pubmed_file}.md5")
+        
+    
     
 
 
 if __name__ == "__main__":
 
-    df = xml_to_df("/tmp/pub2csv/pubmed25n1567.xml.gz")
-    df = clean_df(df)
-    print(df)
+    # df = xml_to_df("/tmp/pub2csv/pubmed25n1567.xml.gz")
+    # df = clean_df(df)
+    # print(df)
+
+    xml_to_parquet("/tmp/pubfetch/pubmed25n1539.xml.gz", "/tmp/pubfetch/test.parquet", False)
+    xml_to_csv("/tmp/pubfetch/pubmed25n1539.xml.gz", "/tmp/pubfetch/test.csv", False)
+
     
