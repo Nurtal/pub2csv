@@ -1,9 +1,29 @@
 import glob
 import polars as pl
+from tqdm import tqdm
 
-from .download import get_list_of_pubmed_files, get_files_between_date, download_file_list
-from .parser import xml_to_df, clean_df
+from .download import get_list_of_pubmed_files, get_files_between_date, download_file_list, download_and_check
+from .parser import xml_to_df, clean_df, xml_to_parquet
 from .filter import filter_date
+
+
+def get_baseline_data(output_folder):
+    """ """
+
+    # parameters
+    ncbi_server_address = "ftp.ncbi.nlm.nih.gov"
+    folder_location = "/pubmed/updatefiles/"
+
+    # get list of files
+    file_to_date = get_list_of_pubmed_files(ncbi_server_address, folder_location)
+
+    # collect data
+    for gz_file in tqdm(file_to_date.keys(), desc="Extracting Baseline Data"):
+        
+        if download_and_check(ncbi_server_address, folder_location, gz_file, output_folder):
+            xml_to_parquet(f"{output_folder}/{gz_file}", f"{output_folder}/{gz_file.replace('.xml.gz', '.parquet')}", True)
+
+    
 
 def run(date_min:str, date_max:str, result_file:str) -> None:
     """Run the download, parsing and filter of the articles
@@ -44,4 +64,5 @@ def run(date_min:str, date_max:str, result_file:str) -> None:
     
 if __name__ == "__main__":
 
-    run("12/09/2025", "14/09/2025", "/tmp/machin.parquet")
+    # run("12/09/2025", "14/09/2025", "/tmp/machin.parquet")
+    get_baseline_data("/tmp/pubfetch")
