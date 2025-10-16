@@ -4,10 +4,11 @@ from tqdm import tqdm
 import glob
 from datetime import datetime
 import hashlib
+import shutil
 
 
 
-def get_list_of_pubmed_files(ncbi_server_address:str, pubmed_emplacement:str) -> dict:
+def get_file_list_to_modif_date(ncbi_server_address:str, pubmed_emplacement:str) -> dict:
     """Conncect to the NCBI server and return a list of available gz files and their date of last modification
 
     Args:
@@ -40,12 +41,52 @@ def get_list_of_pubmed_files(ncbi_server_address:str, pubmed_emplacement:str) ->
         if elt_str[-1] == "gz":
             target_files.append(elt)
             resp = ftp.sendcmd(f"MDTM {elt}")
+            print(elt)
+            print(resp)
+            print("-"*45)
             d = resp.split(' ')[1]
             d = datetime.strptime(d, "%Y%m%d%H%M%S")
             file_to_date[elt] = d
 
     # return list of files
     return file_to_date
+
+
+def get_list_of_pubmed_files(ncbi_server_address:str, pubmed_emplacement:str) -> list:
+    """Conncect to the NCBI server and return a list of available gz files
+
+    Args:
+        - ncbi_server_address (str) : ftp adress of ncbi server
+        - pubmed_emplacement (str) : place where files are stored on the ftp server
+
+    Returns:
+        - (list) : list of .gz files present in pumbed_emplacement
+       
+    """
+
+    # connect to the NCBI server
+    target_files = []
+    ftp = FTP(ncbi_server_address)
+    ftp.login(user="", passwd="")
+
+    # navigate to the pubmed directory
+    ftp.cwd(pubmed_emplacement)
+
+    # list files present in the ftp folder
+    try:
+        files = ftp.nlst()
+    except:
+        print("[*] No files to list or connection denied")
+
+    # prepare list of gz file to download
+    for elt in files:
+        elt_str = elt.split(".")
+        if elt_str[-1] == "gz":
+            target_files.append(elt)
+
+    # return list of files
+    return target_files
+
 
 
 def get_files_between_date(file_to_date:dict, date_min:str, date_max:str):
@@ -259,6 +300,38 @@ def download_and_check(ncbi_server:str, pubmed_folder:str, file_name:str, destin
 
     return check
 
+
+def check_folder_capacity(folder:str, treshold:int) -> bool:
+    """Check if privded folder can handle volume of data define by treshold
+
+    Args:
+        - folder (str) : path to the folder to test
+        - treshold (int) : volume to handle, in Go
+
+    Returns:
+        - (bool) : True if it can handle it, False if it can't
+    
+    """
+
+    # if folder exist
+    if os.path.isdir(folder):
+
+        # collect infos
+        total, used, free = shutil.disk_usage(folder)
+
+        # convert to Go
+        free_go = free / (1024 ** 3)
+
+        # evaluate
+        if free_go >= treshold:
+            return True
+
+    return False
+
+
+
+    
+
     
 if __name__ == "__main__":
 
@@ -269,7 +342,7 @@ if __name__ == "__main__":
     md5_file = "/home/drfox/Downloads/pubmed25n1275.xml.gz.md5"
     target_file = "pubmed25n1539.xml.gz"
     
-    # m = get_list_of_pubmed_files(ncbi_server_address, pubmed_emplacement)
+    # m = get_list_of_pubmed_files(ncbi_server_address, '/pubmed/baseline')
     # m = get_files_between_date(m, "12/09/2025", "25/09/2025")
     # download_file_list(m, ncbi_server_address, pubmed_emplacement, "/tmp/pub2csv")
 
@@ -277,6 +350,9 @@ if __name__ == "__main__":
     # m = check_md5(gz_file, md5_file)
 
     # download_pubmed_file(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch")
-    m = download_and_check(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch")
+    # m = download_and_check(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch")
+    # print(m)
+
+    m = check_folder_capacity("/tmp/pubfetch", 15)
     print(m)
     

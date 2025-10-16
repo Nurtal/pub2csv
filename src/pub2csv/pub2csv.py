@@ -2,24 +2,37 @@ import glob
 import polars as pl
 from tqdm import tqdm
 
-from .download import get_list_of_pubmed_files, get_files_between_date, download_file_list, download_and_check
+from .download import get_list_of_pubmed_files, get_files_between_date, download_file_list, download_and_check, check_folder_capacity
 from .parser import xml_to_df, clean_df, xml_to_parquet
 from .filter import filter_date
 
 
-def get_baseline_data(output_folder):
-    """ """
+def get_baseline_data(output_folder:str) -> None:
+    """Download the content of baseline pubmed folder into output folder
+    Can take a while, a lot of files to download
+
+    Args:
+        - output_folder (str) : name of the folder to store downloaded files parsed as parquet
+    """
 
     # parameters
     ncbi_server_address = "ftp.ncbi.nlm.nih.gov"
-    folder_location = "/pubmed/updatefiles/"
+    folder_location = "/pubmed/baseline/"
+
+    # init output folder
+    if not os.path.isidir(output_folder):
+        os.mkdir(output_folder)
+
+    # check volume capacity
+    if not check_folder_capacity(output_folder, 15):
+        print(f"[!] Not enough space to write in folder {output_folder}")
+        return None
 
     # get list of files
-    file_to_date = get_list_of_pubmed_files(ncbi_server_address, folder_location)
+    file_list = get_list_of_pubmed_files(ncbi_server_address, folder_location)
 
     # collect data
-    for gz_file in tqdm(file_to_date.keys(), desc="Extracting Baseline Data"):
-        
+    for gz_file in tqdm(file_list[0:10], desc="Extracting Baseline Data"):
         if download_and_check(ncbi_server_address, folder_location, gz_file, output_folder):
             xml_to_parquet(f"{output_folder}/{gz_file}", f"{output_folder}/{gz_file.replace('.xml.gz', '.parquet')}", True)
 
