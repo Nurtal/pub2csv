@@ -21,7 +21,7 @@ def get_baseline_data(output_folder:str) -> None:
     folder_location = "/pubmed/baseline/"
 
     # init output folder
-    if not os.path.isidir(output_folder):
+    if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
 
     # check volume capacity

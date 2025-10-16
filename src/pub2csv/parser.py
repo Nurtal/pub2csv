@@ -31,14 +31,14 @@ def xml_to_df(file_path:str) -> pl.DataFrame:
 
             # Titre
             title_elem = article.find('.//ArticleTitle')
-            data['Title'] = title_elem.text if title_elem is not None else None
+            data['Title'] = title_elem.text if title_elem is not None else ""
 
             # Abstract (peut avoir plusieurs <AbstractText>)
             abstract_elems = article.findall('.//Abstract/AbstractText')
             if abstract_elems:
                 data['Abstract'] = " ".join([el.text for el in abstract_elems if el.text])
             else:
-                data['Abstract'] = None
+                data['Abstract'] = ""
 
             # Date de publication (Year-Month-Day si dispo)
             pub_date = article.find('.//Article/Journal/JournalIssue/PubDate')
@@ -48,7 +48,7 @@ def xml_to_df(file_path:str) -> pl.DataFrame:
                 day = pub_date.findtext('Day') or ""
                 data['PublicationDate'] = f"{year}-{month}-{day}".strip("-")
             else:
-                data['PublicationDate'] = None
+                data['PublicationDate'] = ""
 
             # Date de révision / update
             revision_date = article.find('.//MedlineCitation/DateRevised')
@@ -58,7 +58,7 @@ def xml_to_df(file_path:str) -> pl.DataFrame:
                 day = revision_date.findtext('Day') or ""
                 data['RevisionDate'] = f"{year}-{month}-{day}".strip("-")
             else:
-                data['RevisionDate'] = None
+                data['RevisionDate'] = ""
 
             # MeSH Terms
             mesh_terms = [mh.findtext('DescriptorName') for mh in article.findall('.//MeshHeading')]
@@ -231,7 +231,7 @@ if __name__ == "__main__":
     # df = clean_df(df)
     # print(df)
 
-    xml_to_parquet("/tmp/pubfetch/pubmed25n1539.xml.gz", "/tmp/pubfetch/test.parquet", False)
-    xml_to_csv("/tmp/pubfetch/pubmed25n1539.xml.gz", "/tmp/pubfetch/test.csv", False)
+    xml_to_parquet("/tmp/pubfetch/pubmed25n0036.xml.gz", "/tmp/pubfetch/test.parquet", False)
+    # xml_to_csv("/tmp/pubfetch/pubmed25n1539.xml.gz", "/tmp/pubfetch/test.csv", False)
 
     
