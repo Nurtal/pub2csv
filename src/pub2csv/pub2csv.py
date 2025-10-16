@@ -1,6 +1,7 @@
 import glob
 import polars as pl
 from tqdm import tqdm
+import os
 
 from .download import get_list_of_pubmed_files, get_files_between_date, download_file_list, download_and_check, check_folder_capacity
 from .parser import xml_to_df, clean_df, xml_to_parquet
@@ -32,7 +33,7 @@ def get_baseline_data(output_folder:str) -> None:
     file_list = get_list_of_pubmed_files(ncbi_server_address, folder_location)
 
     # collect data
-    for gz_file in tqdm(file_list[0:10], desc="Extracting Baseline Data"):
+    for gz_file in tqdm(file_list, desc="Extracting Baseline Data"):
         if download_and_check(ncbi_server_address, folder_location, gz_file, output_folder):
             xml_to_parquet(f"{output_folder}/{gz_file}", f"{output_folder}/{gz_file.replace('.xml.gz', '.parquet')}", True)
 
