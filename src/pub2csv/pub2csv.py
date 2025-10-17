@@ -8,7 +8,7 @@ from .parser import xml_to_df, clean_df, xml_to_parquet
 from .filter import filter_date
 
 
-def get_baseline_data(output_folder:str, max_retries=3:int) -> None:
+def get_baseline_data(output_folder:str, max_retries:int) -> None:
     """Download the content of baseline pubmed folder into output folder
     Can take a while, a lot of files to download
 
@@ -101,4 +101,4 @@ def run(date_min:str, date_max:str, result_file:str) -> None:
 if __name__ == "__main__":
 
     # run("12/09/2025", "14/09/2025", "/tmp/machin.parquet")
-    get_baseline_data("/tmp/pubfetch2")
+    get_baseline_data("/tmp/pubfetch2", 3)
