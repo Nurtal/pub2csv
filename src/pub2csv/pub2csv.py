@@ -40,7 +40,7 @@ def get_baseline_data(output_folder:str, max_retries:int) -> None:
     # collect data
     while to_retry and attempts < max_retries:
         failed = []
-        for gz_file in tqdm(to_retry, desc="[Attempt {attempts+1}] Extracting Baseline Data"):
+        for gz_file in tqdm(to_retry, desc=f"[Attempt {attempts+1}] Extracting Baseline Data"):
             if download_and_check(ncbi_server_address, folder_location, gz_file, output_folder):
                 xml_to_parquet(f"{output_folder}/{gz_file}", f"{output_folder}/{gz_file.replace('.xml.gz', '.parquet')}", True)
             else:
