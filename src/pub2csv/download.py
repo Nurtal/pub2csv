@@ -338,9 +338,11 @@ if __name__ == "__main__":
     # parameters
     ncbi_server_address = "ftp.ncbi.nlm.nih.gov"
     pubmed_emplacement = "/pubmed/updatefiles/"
+    pubmed_baseline = "/pubmed/baseline/"
     gz_file = "/home/drfox/Downloads/pubmed25n1275.xml.gz"
     md5_file = "/home/drfox/Downloads/pubmed25n1275.xml.gz.md5"
-    target_file = "pubmed25n1539.xml.gz"
+    target_file = "pubmed25n0918.xml.gz"
+    trash_folder = "/home/drfox/workspace/pub2csv/trash"
     
     # m = get_list_of_pubmed_files(ncbi_server_address, '/pubmed/baseline')
     # m = get_files_between_date(m, "12/09/2025", "25/09/2025")
@@ -349,10 +351,17 @@ if __name__ == "__main__":
     # m = get_files_metadata(ncbi_server_address, pubmed_emplacement)
     # m = check_md5(gz_file, md5_file)
 
-    # download_pubmed_file(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch")
-    # m = download_and_check(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch")
+    # download_pubmed_file(ncbi_server_address, pubmed_baseline, target_file, "/tmp/pubfetch2")
+    # m = download_and_check(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch2")
     # print(m)
 
-    m = check_folder_capacity("/tmp/pubfetch", 15)
-    print(m)
+    # m = check_folder_capacity("/tmp/pubfetch", 15)
+    # print(m)
+
+    # import glob
+    # for tf in glob.glob(f"/tmp/pubfetch2/*.gz"):
+    #     tm = f"{tf}.md5"
+
+    #     if not check_md5(tf, tm):
+    #         print(tf)
     
