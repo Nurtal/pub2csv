@@ -3,7 +3,7 @@ import polars as pl
 from tqdm import tqdm
 import os
 
-from .download import get_list_of_pubmed_files, get_files_between_date, download_file_list, download_and_check, check_folder_capacity
+from .download import get_list_of_pubmed_files, get_files_between_date, download_file_list, download_and_check, check_folder_capacity, get_ftp_connection
 from .parser import xml_to_df, clean_df, xml_to_parquet
 from .filter import filter_date
 
@@ -21,6 +21,9 @@ def get_baseline_data(output_folder:str, max_retries:int) -> None:
     ncbi_server_address = "ftp.ncbi.nlm.nih.gov"
     folder_location = "/pubmed/baseline/"
 
+    # create ftp connection
+    ftp = get_ftp_connection(ncbi_server_address, folder_location)
+
     # init output folder
     if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
@@ -31,7 +34,7 @@ def get_baseline_data(output_folder:str, max_retries:int) -> None:
         return None
 
     # get list of files
-    file_list = get_list_of_pubmed_files(ncbi_server_address, folder_location)
+    file_list = get_list_of_pubmed_files(ftp)
 
     # init loop parameter
     to_retry = file_list
@@ -41,7 +44,7 @@ def get_baseline_data(output_folder:str, max_retries:int) -> None:
     while to_retry and attempts < max_retries:
         failed = []
         for gz_file in tqdm(to_retry, desc=f"[Attempt {attempts+1}] Extracting Baseline Data"):
-            if download_and_check(ncbi_server_address, folder_location, gz_file, output_folder):
+            if download_and_check(gz_file, output_folder, ftp):
                 xml_to_parquet(f"{output_folder}/{gz_file}", f"{output_folder}/{gz_file.replace('.xml.gz', '.parquet')}", True)
             else:
                 failed.append(gz_file)
@@ -56,6 +59,9 @@ def get_baseline_data(output_folder:str, max_retries:int) -> None:
         for gz_file in to_retry:
             print(f"\t- {gz_file}")
 
+    # close ftp connection
+    ftp.close()
+    
     # display coverage
     coverage = float(len(file_list) - len(to_retry) / len(file_list))*100.0
     print("[*] Extract {coverage} % of baseline articles")

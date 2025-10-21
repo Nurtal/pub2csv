@@ -7,6 +7,27 @@ import hashlib
 import shutil
 
 
+def get_ftp_connection(ncbi_server_address, target_folder) -> FTP:
+    """get ftp connection to NCBI
+
+    Args:
+        - ncbi_server_address (str) : ftp adress of ncbi server
+        - pubmed_emplacement (str) : place where files are stored on the ftp server
+
+    Returns:
+        - (FTP) : connection to the server
+        
+    """
+
+    # connect to the NCBI server
+    target_files = []
+    ftp = FTP(ncbi_server_address)
+    ftp.login(user="", passwd="")
+
+    # navigate to the pubmed directory
+    ftp.cwd(target_folder)
+
+    return ftp
 
 def get_file_list_to_modif_date(ncbi_server_address:str, pubmed_emplacement:str) -> dict:
     """Conncect to the NCBI server and return a list of available gz files and their date of last modification
@@ -52,29 +73,21 @@ def get_file_list_to_modif_date(ncbi_server_address:str, pubmed_emplacement:str)
     return file_to_date
 
 
-def get_list_of_pubmed_files(ncbi_server_address:str, pubmed_emplacement:str) -> list:
-    """Conncect to the NCBI server and return a list of available gz files
+def get_list_of_pubmed_files(ftp_connection:FTP) -> list:
+    """return a list of available gz files
 
     Args:
-        - ncbi_server_address (str) : ftp adress of ncbi server
-        - pubmed_emplacement (str) : place where files are stored on the ftp server
+        - ftp_connection (FTP) : connection to ncbi server
 
     Returns:
         - (list) : list of .gz files present in pumbed_emplacement
        
     """
 
-    # connect to the NCBI server
-    target_files = []
-    ftp = FTP(ncbi_server_address)
-    ftp.login(user="", passwd="")
-
-    # navigate to the pubmed directory
-    ftp.cwd(pubmed_emplacement)
-
     # list files present in the ftp folder
+    target_files = []
     try:
-        files = ftp.nlst()
+        files = ftp_connection.nlst()
     except:
         print("[*] No files to list or connection denied")
 
@@ -245,14 +258,13 @@ def check_md5(gz_file:str, md5_file:str) -> bool:
     return check
 
 
-def download_pubmed_file(ncbi_server:str, pubmed_folder:str, file_name:str, destination_folder:str) -> None:
+def download_pubmed_file(file_name:str, destination_folder:str, ftp_connection:FTP) -> None:
     """Download a single pubmed xml.gz file and its associated md5 file
     
     Args:
-        - ncbi_server (str) : ftp server adress
-        - pubmed_folder (str) : folder where to fond the files on the ftp server
         - file_name (str) : name of the file to download
         - destination_folder (str) : folder to save pubmed file and md5 file
+        - ftp_connection (FTP) : connection to ncbi server
     
     """
 
@@ -260,32 +272,24 @@ def download_pubmed_file(ncbi_server:str, pubmed_folder:str, file_name:str, dest
     if not os.path.isdir(destination_folder):
         os.mkdir(destination_folder)
 
-    # connect to the NCBI server
-    ftp = FTP(ncbi_server)
-    ftp.login(user="", passwd="")
-
-    # navigate to the pubmed directory
-    ftp.cwd(pubmed_folder)
-
     # download xml.gz file
     gz_local_file = open(destination_folder + "/" + str(file_name), "wb")
-    ftp.retrbinary("RETR " + str(file_name), gz_local_file.write, 1024)
+    ftp_connection.retrbinary("RETR " + str(file_name), gz_local_file.write, 1024)
     gz_local_file.close()
 
     # download md5 file
     md5_local_file = open(destination_folder + "/" + f"{file_name}.md5", "wb")
-    ftp.retrbinary("RETR " + f"{file_name}.md5", md5_local_file.write, 1024)
+    ftp_connection.retrbinary("RETR " + f"{file_name}.md5", md5_local_file.write, 1024)
     md5_local_file.close()
     
 
-def download_and_check(ncbi_server:str, pubmed_folder:str, file_name:str, destination_folder:str) -> bool:
+def download_and_check(file_name:str, destination_folder:str, ftp_connection:FTP) -> bool:
     """Download pubmed xml file and its associate md5 file, perform md5 check, return True if check passed, False if not
     
     Args:
-        - ncbi_server (str) : ftp server adress
-        - pubmed_folder (str) : folder where to fond the files on the ftp server
         - file_name (str) : name of the file to download
         - destination_folder (str) : folder to save pubmed file and md5 file
+        - ftp_connection (FTP) : connection to ncbi server
 
     Returns:
         - (bool) : True if hash are identical, False if not
@@ -293,7 +297,7 @@ def download_and_check(ncbi_server:str, pubmed_folder:str, file_name:str, destin
     """
 
     # Download
-    download_pubmed_file(ncbi_server, pubmed_folder, file_name, destination_folder)
+    download_pubmed_file(file_name, destination_folder, ftp_connection)
 
     # check
     check = check_md5(f"{destination_folder}/{file_name}", f"{destination_folder}/{file_name}.md5")
@@ -329,9 +333,6 @@ def check_folder_capacity(folder:str, treshold:int) -> bool:
     return False
 
 
-
-    
-
     
 if __name__ == "__main__":
 
@@ -344,15 +345,18 @@ if __name__ == "__main__":
     target_file = "pubmed25n0918.xml.gz"
     trash_folder = "/home/drfox/workspace/pub2csv/trash"
     
-    # m = get_list_of_pubmed_files(ncbi_server_address, '/pubmed/baseline')
+    
+    ftp_co = get_ftp_connection(ncbi_server_address, pubmed_baseline)   
+    
+    # m = get_list_of_pubmed_files(ftp_co)
     # m = get_files_between_date(m, "12/09/2025", "25/09/2025")
     # download_file_list(m, ncbi_server_address, pubmed_emplacement, "/tmp/pub2csv")
 
     # m = get_files_metadata(ncbi_server_address, pubmed_emplacement)
     # m = check_md5(gz_file, md5_file)
 
-    # download_pubmed_file(ncbi_server_address, pubmed_baseline, target_file, "/tmp/pubfetch2")
-    # m = download_and_check(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch2")
+    download_pubmed_file(target_file, "/tmp/pubfetch4", ftp_co)
+    # m = download_and_check(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch3", ftp_connection)
     # print(m)
 
     # m = check_folder_capacity("/tmp/pubfetch", 15)
