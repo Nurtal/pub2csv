@@ -19,7 +19,7 @@ def get_baseline_data(output_folder:str, max_retries:int) -> None:
 
     # parameters
     ncbi_server_address = "ftp.ncbi.nlm.nih.gov"
-    folder_location = "/pubmed/baseline/"
+    folder_location = "/pubmed/updatefiles/"
 
     # create ftp connection
     ftp = get_ftp_connection(ncbi_server_address, folder_location)
@@ -64,7 +64,7 @@ def get_baseline_data(output_folder:str, max_retries:int) -> None:
     
     # display coverage
     coverage = float(len(file_list) - len(to_retry) / len(file_list))*100.0
-    print("[*] Extract {coverage} % of baseline articles")
+    print(f"[*] Extract {coverage} % of baseline articles")
     
 
 def run(date_min:str, date_max:str, result_file:str) -> None:
@@ -107,4 +107,4 @@ def run(date_min:str, date_max:str, result_file:str) -> None:
 if __name__ == "__main__":
 
     # run("12/09/2025", "14/09/2025", "/tmp/machin.parquet")
-    get_baseline_data("/tmp/pubfetch2", 3)
+    get_baseline_data("/tmp/pubfetch3", 3)
