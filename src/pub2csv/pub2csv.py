@@ -2,13 +2,14 @@ import glob
 import polars as pl
 from tqdm import tqdm
 import os
+import shutil
 
 from .download import get_list_of_pubmed_files, get_files_between_date, download_file_list, download_and_check, check_folder_capacity, get_ftp_connection
 from .parser import xml_to_df, clean_df, xml_to_parquet
 from .filter import filter_date
 
 
-def get_baseline_data(output_folder:str, max_retries:int) -> None:
+def get_baseline_data(output_folder:str, max_retries:int, override:bool) -> None:
     """Download the content of baseline pubmed folder into output folder
     Can take a while, a lot of files to download
 
@@ -19,22 +20,35 @@ def get_baseline_data(output_folder:str, max_retries:int) -> None:
 
     # parameters
     ncbi_server_address = "ftp.ncbi.nlm.nih.gov"
-    folder_location = "/pubmed/updatefiles/"
+    folder_location = "/pubmed/baseline/"
 
-    # create ftp connection
-    ftp = get_ftp_connection(ncbi_server_address, folder_location)
+    # clean output folder if it already exist and override is set to True
+    if override and os.path.isidir(output_folder):
+        shutil.rmtree(output_folder)
 
     # init output folder
     if not os.path.isdir(output_folder):
         os.mkdir(output_folder)
+    else:
+        dl_files = []
+        processed_files = glob.glob(f"{output_folder}/*.parquet")
+        for pf in processed_files:
+            dl_files.append(pf.replace(".parquet", ".xml.gz").split("/")[-1])
 
     # check volume capacity
     if not check_folder_capacity(output_folder, 16):
         print(f"[!] Not enough space to write in folder {output_folder}")
         return None
 
-    # get list of files
-    file_list = get_list_of_pubmed_files(ftp)
+    # create ftp connection
+    ftp = get_ftp_connection(ncbi_server_address, folder_location)
+
+    # get list of files to download
+    file_list = []
+    all_files = get_list_of_pubmed_files(ftp)
+    for af in all_files:
+        if af not in dl_files:
+            file_list.append(af)
 
     # init loop parameter
     to_retry = file_list
@@ -63,7 +77,7 @@ def get_baseline_data(output_folder:str, max_retries:int) -> None:
     ftp.close()
     
     # display coverage
-    coverage = float(len(file_list) - len(to_retry) / len(file_list))*100.0
+    coverage = float( (len(all_files) - len(to_retry)) / len(all_files) ) *100.0
     print(f"[*] Extract {coverage} % of baseline articles")
     
 
@@ -107,4 +121,4 @@ def run(date_min:str, date_max:str, result_file:str) -> None:
 if __name__ == "__main__":
 
     # run("12/09/2025", "14/09/2025", "/tmp/machin.parquet")
-    get_baseline_data("/tmp/pubfetch3", 3)
+    get_baseline_data("/tmp/pubfetch2", 3, False)
