@@ -157,8 +157,20 @@ def get_updatefiles_data(output_folder:str, max_retries:int, override:bool) -> N
     print(f"[*] Extract {coverage} % of baseline articles")
 
 
-def get_pmid_data(pmid_list:list, output_folder:str, max_retries:int, map_file:str):
-    """ """
+def get_pmid_data(pmid_list:list, output_folder:str, max_retries:int, map_file:str) -> pl.DataFrame:
+    """Get dataframe containing data for specify pmid
+    Download only conecrned file from pubmed, use the map file to identify them
+
+    Args:
+        - pmid_list (list) : list of pmid (str)
+        - output_folder (str) : path to the temporary download folder
+        - max_retries (int) : number of authorize attempt to dl files
+        - map_file (str) : path to the map file
+
+    Returns:
+        - (pl.DataFrame) : data table for specified PMID
+        
+    """
 
     # parameters
     ncbi_server_address = "ftp.ncbi.nlm.nih.gov"
@@ -242,6 +254,16 @@ def get_pmid_data(pmid_list:list, output_folder:str, max_retries:int, map_file:s
     # close ftp connection
     ftp.close()
 
+    # assemble dataframe
+    data = []
+    for pqf in glob.glob(f"{output_folder}/*.parquet"):
+        df = pl.read_parquet(pqf)
+        data.append(df)
+    df = pl.concat(data).filter(pl.col('PMID').is_in(pmid_list))
+
+    return df
+    
+
 
 def run(date_min:str, date_max:str, result_file:str) -> None:
     """Run the download, parsing and filter of the articles
@@ -285,4 +307,4 @@ if __name__ == "__main__":
     # run("12/09/2025", "14/09/2025", "/tmp/machin.parquet")
     # get_baseline_data("/tmp/pubfetch2", 3, False)
     # get_updatefiles_data("/tmp/pubfetch4", 3, False)
-    get_pmid_data("/tmp/pmid", 3, "/tmp/pubmap.parquet"):
+    get_pmid_data(["38321927", "34112769", "38583691"], "/tmp/pmid", 3, "/tmp/pubmap.parquet")
