@@ -2,7 +2,7 @@ venv/*
 dist/*
 build/*
 trash/*
-ressources/*
+ressources/*.parquet
 *.egg-info/
 __pycache__/*
 src/pub2csv/__pycache__/*
