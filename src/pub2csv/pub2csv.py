@@ -7,6 +7,7 @@ import shutil
 from .download import get_list_of_pubmed_files, get_files_between_date, download_file_list, download_and_check, check_folder_capacity, get_ftp_connection
 from .parser import xml_to_df, clean_df, xml_to_parquet
 from .filter import filter_date
+from .mapper import get_files_for_pmid
 
 
 def get_baseline_data(output_folder:str, max_retries:int, override:bool) -> None:
@@ -132,7 +133,7 @@ def get_updatefiles_data(output_folder:str, max_retries:int, override:bool) -> N
     # collect data
     while to_retry and attempts < max_retries:
         failed = []
-        for gz_file in tqdm(to_retry, desc=f"[Attempt {attempts+1}] Extracting Baseline Data"):
+        for gz_file in tqdm(to_retry, desc=f"[Attempt {attempts+1}] Extracting UpdateFiles Data"):
             if download_and_check(gz_file, output_folder, ftp):
                 xml_to_parquet(f"{output_folder}/{gz_file}", f"{output_folder}/{gz_file.replace('.xml.gz', '.parquet')}", True)
             else:
@@ -156,6 +157,90 @@ def get_updatefiles_data(output_folder:str, max_retries:int, override:bool) -> N
     print(f"[*] Extract {coverage} % of baseline articles")
 
 
+def get_pmid_data(pmid_list:list, output_folder:str, max_retries:int, map_file:str):
+    """ """
+
+    # parameters
+    ncbi_server_address = "ftp.ncbi.nlm.nih.gov"
+    updatefiles_folder = "/pubmed/updatefiles/"
+    baseline_folder = "/pubmed/baseline/"
+
+    # init output folder
+    if not os.path.isdir(output_folder):
+        os.mkdir(output_folder)
+
+    # get list of files to download
+    files = get_files_for_pmid(pmid_list, map_file)
+
+    #----------#
+    # BASELINE #
+    #----------#
+    # create ftp connection - baseline
+    ftp = get_ftp_connection(ncbi_server_address, baseline_folder)
+
+    # get list of files to download
+    file_list = files['baseline']
+
+    # init loop parameter
+    to_retry = file_list
+    attempts = 0
+
+    # collect data
+    while to_retry and attempts < max_retries:
+        failed = []
+        for gz_file in tqdm(to_retry, desc=f"[Attempt {attempts+1}] Extracting Baseline Data"):
+            if download_and_check(gz_file, output_folder, ftp):
+                xml_to_parquet(f"{output_folder}/{gz_file}", f"{output_folder}/{gz_file.replace('.xml.gz', '.parquet')}", True)
+            else:
+                failed.append(gz_file)
+
+        # update loop parameter
+        to_retry = failed
+        attempts +=1
+
+    # display missing files
+    if to_retry:
+        print(f"[!][BASELINE]Failed to download the following files after {attempts} attempts:")
+        for gz_file in to_retry:
+            print(f"\t- {gz_file}")
+
+    # close ftp connection
+    ftp.close()
+
+    #-------------#
+    # UPDATEFILES #
+    #-------------#
+    # create ftp connection - updatefiles
+    ftp = get_ftp_connection(ncbi_server_address, updatefiles_folder)
+
+    # get list of files to download
+    file_list = files['updatefiles']
+
+    # init loop parameter
+    to_retry = file_list
+    attempts = 0
+
+    # collect data
+    while to_retry and attempts < max_retries:
+        failed = []
+        for gz_file in tqdm(to_retry, desc=f"[Attempt {attempts+1}] Extracting UpdateFiles Data"):
+            if download_and_check(gz_file, output_folder, ftp):
+                xml_to_parquet(f"{output_folder}/{gz_file}", f"{output_folder}/{gz_file.replace('.xml.gz', '.parquet')}", True)
+            else:
+                failed.append(gz_file)
+
+        # update loop parameter
+        to_retry = failed
+        attempts +=1
+
+    # display missing files
+    if to_retry:
+        print(f"[!][UPDATE]Failed to download the following files after {attempts} attempts:")
+        for gz_file in to_retry:
+            print(f"\t- {gz_file}")
+
+    # close ftp connection
+    ftp.close()
 
 
 def run(date_min:str, date_max:str, result_file:str) -> None:
@@ -199,4 +284,5 @@ if __name__ == "__main__":
 
     # run("12/09/2025", "14/09/2025", "/tmp/machin.parquet")
     # get_baseline_data("/tmp/pubfetch2", 3, False)
-    get_updatefiles_data("/tmp/pubfetch4", 3, False)
+    # get_updatefiles_data("/tmp/pubfetch4", 3, False)
+    get_pmid_data("/tmp/pmid", 3, "/tmp/pubmap.parquet"):

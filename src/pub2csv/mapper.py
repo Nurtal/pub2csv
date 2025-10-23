@@ -90,5 +90,5 @@ def get_files_for_pmid(pmid_list:list, map_file:str) -> dict:
 if __name__ == "__main__":
 
     # extract_map("/tmp/pubfetch2", "/tmp/pubfetch3", "/tmp/pubmap.parquet")
-    m = get_files_for_pmid(['38273473', '39096929'], "/home/drfox/workspace/pub2csv/ressources/pubmap.parquet")
+    m = get_files_for_pmid(['38273473', '39096929'], "/tmp/pubmap.parquet")
     print(m)
