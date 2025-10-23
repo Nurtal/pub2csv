@@ -22,7 +22,7 @@ def extract_map(baseline_folder:str, updatefiles_folder:str, map_file:str) -> No
                 'PMID':row[0],
                 'PublicationDate':row[1],
                 'Source':'baseline',
-                'SourceFile':pf.replace('.parquet', '.gz.xml').split('/')[-1]
+                'SourceFile':pf.replace('.parquet', '.xml.gz').split('/')[-1]
             }
             data.append(vector)
 
@@ -34,7 +34,7 @@ def extract_map(baseline_folder:str, updatefiles_folder:str, map_file:str) -> No
                 'PMID':row[0],
                 'PublicationDate':row[1],
                 'Source':'updatefiles',
-                'SourceFile':pf.replace('.parquet', '.gz.xml').split('/')[-1]
+                'SourceFile':pf.replace('.parquet', '.xml.gz').split('/')[-1]
             }
             data.append(vector)
 

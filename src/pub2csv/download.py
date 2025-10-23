@@ -128,13 +128,12 @@ def get_files_between_date(file_to_date:dict, date_min:str, date_max:str):
             
     return target_file
 
-def download_file_list(file_list:list, ncbi_server_address:str, pubmed_emplacement:str, download_folder:str) -> None:
+def download_file_list(file_list:list, ftp:FTP, download_folder:str) -> None:
     """Download a specific list of files from the ncbri to a download folder
 
     Args:
         - file_list (list) : list of file to dl
-        - ncbi_server_address (str) : ftp server adress
-        - pubmed_emplacement (str) : folder where to fond the files on the ftp server
+        - ftp (FTP) : connection to ncbi server
         - download_folder (str) : local download where files are dl
     
     """
@@ -142,13 +141,6 @@ def download_file_list(file_list:list, ncbi_server_address:str, pubmed_emplaceme
     # if dl folder does not exist, create it
     if not os.path.isdir(download_folder):
         os.mkdir(download_folder)
-
-    # connect to the NCBI server
-    ftp = FTP(ncbi_server_address)
-    ftp.login(user="", passwd="")
-
-    # navigate to the pubmed directory
-    ftp.cwd(pubmed_emplacement)
 
     # loop over target list
     for gz_file in file_list:
@@ -350,12 +342,12 @@ if __name__ == "__main__":
     
     # m = get_list_of_pubmed_files(ftp_co)
     # m = get_files_between_date(m, "12/09/2025", "25/09/2025")
-    # download_file_list(m, ncbi_server_address, pubmed_emplacement, "/tmp/pub2csv")
+    download_file_list(['pubmed25n1224.xml.gz'], ftp_co, "/tmp/pubdltest")
 
     # m = get_files_metadata(ncbi_server_address, pubmed_emplacement)
     # m = check_md5(gz_file, md5_file)
 
-    download_pubmed_file(target_file, "/tmp/pubfetch4", ftp_co)
+    # download_pubmed_file(target_file, "/tmp/pubfetch4", ftp_co)
     # m = download_and_check(ncbi_server_address, pubmed_emplacement, target_file, "/tmp/pubfetch3", ftp_connection)
     # print(m)
 
