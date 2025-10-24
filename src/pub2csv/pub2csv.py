@@ -157,15 +157,16 @@ def get_updatefiles_data(output_folder:str, max_retries:int, override:bool) -> N
     print(f"[*] Extract {coverage} % of baseline articles")
 
 
-def get_pmid_data(pmid_list:list, output_folder:str, max_retries:int, map_file:str) -> pl.DataFrame:
+def get_pmid_data(pmid_list:list, download_folder:str, max_retries:int, map_file:str, override:bool) -> pl.DataFrame:
     """Get dataframe containing data for specify pmid
     Download only conecrned file from pubmed, use the map file to identify them
 
     Args:
         - pmid_list (list) : list of pmid (str)
-        - output_folder (str) : path to the temporary download folder
+        - download_folder (str) : path to the temporary download folder
         - max_retries (int) : number of authorize attempt to dl files
         - map_file (str) : path to the map file
+        - override (bool) : if set to False, search for existing parquet file before redownload
 
     Returns:
         - (pl.DataFrame) : data table for specified PMID
@@ -177,12 +178,30 @@ def get_pmid_data(pmid_list:list, output_folder:str, max_retries:int, map_file:s
     updatefiles_folder = "/pubmed/updatefiles/"
     baseline_folder = "/pubmed/baseline/"
 
+    # erase dl folder if override is set to true
+    if override and os.path.isdir(download_folder):
+        shutil.rmtree(download_folder)
+
+    # look for existing files
+    dl_baseline = [p.split("/")[-1] for p in glob.glob(f"{download_folder}/baseline/*.parquet")]
+    dl_updatefiles = [p.split("/")[-1] for p in glob.glob(f"{download_folder}/updatefiles/*.parquet")]
+
     # init output folder
-    if not os.path.isdir(output_folder):
-        os.mkdir(output_folder)
+    if not os.path.isdir(download_folder):
+        os.mkdir(download_folder)
+        os.mkdir(f"{download_folder}/baseline")
+        os.mkdir(f"{download_folder}/updatefiles")
 
     # get list of files to download
     files = get_files_for_pmid(pmid_list, map_file)
+    baseline_files_to_download = []
+    updatefiles_files_to_download = []
+    for tf in files['baseline']:
+        if tf.replace('.xml.gz', '.parquet') not in dl_baseline:
+            baseline_files_to_download.append(tf)
+    for tf in files['updatefiles']:
+        if tf.replace('.xml.gz', '.parquet') not in dl_updatefiles:
+            updatefiles_files_to_download.append(tf)
 
     #----------#
     # BASELINE #
@@ -190,19 +209,16 @@ def get_pmid_data(pmid_list:list, output_folder:str, max_retries:int, map_file:s
     # create ftp connection - baseline
     ftp = get_ftp_connection(ncbi_server_address, baseline_folder)
 
-    # get list of files to download
-    file_list = files['baseline']
-
     # init loop parameter
-    to_retry = file_list
+    to_retry = baseline_files_to_download
     attempts = 0
 
     # collect data
     while to_retry and attempts < max_retries:
         failed = []
         for gz_file in tqdm(to_retry, desc=f"[Attempt {attempts+1}] Extracting Baseline Data"):
-            if download_and_check(gz_file, output_folder, ftp):
-                xml_to_parquet(f"{output_folder}/{gz_file}", f"{output_folder}/{gz_file.replace('.xml.gz', '.parquet')}", True)
+            if download_and_check(gz_file, f"{download_folder}/baseline", ftp):
+                xml_to_parquet(f"{download_folder}/baseline/{gz_file}", f"{download_folder}/baseline/{gz_file.replace('.xml.gz', '.parquet')}", True)
             else:
                 failed.append(gz_file)
 
@@ -225,19 +241,16 @@ def get_pmid_data(pmid_list:list, output_folder:str, max_retries:int, map_file:s
     # create ftp connection - updatefiles
     ftp = get_ftp_connection(ncbi_server_address, updatefiles_folder)
 
-    # get list of files to download
-    file_list = files['updatefiles']
-
     # init loop parameter
-    to_retry = file_list
+    to_retry = updatefiles_files_to_download
     attempts = 0
 
     # collect data
     while to_retry and attempts < max_retries:
         failed = []
         for gz_file in tqdm(to_retry, desc=f"[Attempt {attempts+1}] Extracting UpdateFiles Data"):
-            if download_and_check(gz_file, output_folder, ftp):
-                xml_to_parquet(f"{output_folder}/{gz_file}", f"{output_folder}/{gz_file.replace('.xml.gz', '.parquet')}", True)
+            if download_and_check(gz_file, f"{download_folder}/updatefiles", ftp):
+                xml_to_parquet(f"{download_folder}/updatefiles/{gz_file}", f"{download_folder}/updatefiles/{gz_file.replace('.xml.gz', '.parquet')}", True)
             else:
                 failed.append(gz_file)
 
@@ -256,7 +269,10 @@ def get_pmid_data(pmid_list:list, output_folder:str, max_retries:int, map_file:s
 
     # assemble dataframe
     data = []
-    for pqf in glob.glob(f"{output_folder}/*.parquet"):
+    for pqf in glob.glob(f"{download_folder}/baseline/*.parquet"):
+        df = pl.read_parquet(pqf)
+        data.append(df)
+    for pqf in glob.glob(f"{download_folder}/updatefiles/*.parquet"):
         df = pl.read_parquet(pqf)
         data.append(df)
     df = pl.concat(data).filter(pl.col('PMID').is_in(pmid_list))
@@ -307,4 +323,5 @@ if __name__ == "__main__":
     # run("12/09/2025", "14/09/2025", "/tmp/machin.parquet")
     # get_baseline_data("/tmp/pubfetch2", 3, False)
     # get_updatefiles_data("/tmp/pubfetch4", 3, False)
-    get_pmid_data(["38321927", "34112769", "38583691"], "/tmp/pmid", 3, "/tmp/pubmap.parquet")
+    m = get_pmid_data(["38321927", "34112769", "38583691"], "/tmp/pmid", 3, "/tmp/pubmap.parquet", False)
+    print(m)
