@@ -1,5 +1,6 @@
 import glob
 import polars as pl
+from tqdm import tqdm
 
 def extract_map(baseline_folder:str, updatefiles_folder:str, map_file:str) -> None:
     """Exctract data from parquet file to build a map file
@@ -87,8 +88,59 @@ def get_files_for_pmid(pmid_list:list, map_file:str) -> dict:
     return {'baseline':baseline_file, 'updatefiles':updatefiles_file}
 
 
+
+def get_files_between_date(min_date:str, max_date:str, map_file:str) -> dict:
+    """Get files containing infos for article published between min and max date
+    If information is available both in baseline and updatefiles for a given
+    pmid, keep only the updatefiles
+
+    Args:
+        - min_date (str) : min publication date
+        - max_date (str) : max publication date
+        - map_file (str) : path to the map file (should be a .parquet)
+
+    Returns:
+        - (dict) : baseline and updatefiles containing infos for given pmid
+    
+    """
+
+    # init file list
+    baseline_file = []
+    updatefiles_file = []
+
+    # process date
+    min_date = pl.Series([min_date]).str.to_date("%Y-%m-%d")[0]
+    max_date = pl.Series([max_date]).str.to_date("%Y-%m-%d")[0]
+    
+    # load data
+    df = pl.read_parquet(map_file).filter((pl.col('PublicationDate') >= min_date) & (pl.col('PublicationDate') <= max_date))
+
+    # check for associated file
+    for pmid in tqdm(set(df['PMID']), desc="Screening map file ..."):
+        
+        # filter dataframe
+        dfpmid = df.filter(pl.col('PMID') == pmid)
+        dfup = dfpmid.filter(pl.col('Source') == 'updatefiles')
+        dfba = dfpmid.filter(pl.col('Source') == 'baseline')
+
+        # Check update files
+        if dfup.shape[0] > 0:
+            for x in list(dfup['SourceFile']):
+                if x not in updatefiles_file:
+                    updatefiles_file.append(x)
+
+        # if no updatefile, go for baseline file
+        else:
+            for x in list(dfba['SourceFile']):
+                if x not in baseline_file:
+                    baseline_file.append(x)
+
+    return {'baseline':baseline_file, 'updatefiles':updatefiles_file}
+
+
 if __name__ == "__main__":
 
     # extract_map("/tmp/pubfetch2", "/tmp/pubfetch3", "/tmp/pubmap.parquet")
-    m = get_files_for_pmid(['38273473', '39096929'], "/tmp/pubmap.parquet")
+    # m = get_files_for_pmid(['38273473', '39096929'], "/tmp/pubmap.parquet")
+    m = get_files_between_date("2023-10-21", "2023-10-25", "/tmp/pubmap.parquet")
     print(m)
